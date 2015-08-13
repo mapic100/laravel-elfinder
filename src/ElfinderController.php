@@ -44,26 +44,20 @@ class ElfinderController extends BaseController
 
     public function showConnector()
     {
-
         $ds = DIRECTORY_SEPARATOR;
         $pp = public_path().$ds;
-
         $user       = \Auth::user();
-        $dir        = Config::get($this->package . '::dir');
-        $files_dir  = Config::get($this->package . '::files_dir');
-        $elpath     = Config::get($this->package . '::elpath');
-        $roots      = Config::get($this->package . '::roots');
-
+        $dir        = \Config::get($this->package . '::dir');
+        $files_dir  = \Config::get($this->package . '::files_dir');
+        $elpath     = \Config::get($this->package . '::elpath');
+        $roots      = \Config::get($this->package . '::roots');
         $dir_1 = $dir.$ds.$user->id;
-
-        if(!is_dir($pp.$dir_1))
-            mkdir($pp.$dir_1);
-
+        if(!\File::exists($pp.$dir_1))
+            \File::makeDirectory($pp.$dir_1);
         $dir_2 = $dir_1.$ds.$files_dir;
-        if(!is_dir($pp.$dir_2))
-            mkdir($pp.$dir_2);
+        if(!\File::exists($pp.$dir_2))
+            \File::makeDirectory($pp.$dir_2);
         $dir = $dir_2;
-
         if (!$roots)
         {
             $roots = array(
@@ -71,19 +65,14 @@ class ElfinderController extends BaseController
                     'driver' => 'LocalFileSystem', // driver for accessing file system (REQUIRED)
                     'path' => public_path() . DIRECTORY_SEPARATOR . $dir, // path to files (REQUIRED)
                     'URL' => asset($dir), // URL to files (REQUIRED)
-                    'accessControl' => Config::get($this->package . '::access') // filter callback (OPTIONAL)
+                    'accessControl' => \Config::get($this->package . '::access') // filter callback (OPTIONAL)
                 )
             );
         }
-
-        // Documentation for connector options:
-        // https://github.com/Studio-42/elFinder/wiki/Connector-configuration-options
         $opts = array(
             'roots' => $roots
         );
-
-        // run elFinder
-        $connector = new \elFinderConnector(new \elFinder($opts));
+        $connector = new Connector(new \elFinder($opts));
         $connector->run();
         return $connector->getResponse();
     }
