@@ -44,45 +44,46 @@ class ElfinderController extends BaseController
 
     public function showConnector()
     {
-        $roots = $this->app->config->get($this->package . '::roots', []);
 
-        if (empty($roots)) {
+        $ds = DIRECTORY_SEPARATOR;
+        $pp = public_path().$ds;
 
-            $dirs = (array) $this->app->config->get($this->package . '::dir', []);
-            foreach ($dirs as $dir) {
-                $roots[] = [
+        $user       = \Auth::user();
+        $dir        = Config::get($this->package . '::dir');
+        $files_dir  = Config::get($this->package . '::files_dir');
+        $elpath     = Config::get($this->package . '::elpath');
+        $roots      = Config::get($this->package . '::roots');
+
+        $dir_1 = $dir.$ds.$user->id;
+
+        if(!is_dir($pp.$dir_1))
+            mkdir($pp.$dir_1);
+
+        $dir_2 = $dir_1.$ds.$files_dir;
+        if(!is_dir($pp.$dir_2))
+            mkdir($pp.$dir_2);
+        $dir = $dir_2;
+
+        if (!$roots)
+        {
+            $roots = array(
+                array(
                     'driver' => 'LocalFileSystem', // driver for accessing file system (REQUIRED)
-                    'path' => public_path($dir), // path to files (REQUIRED)
-                    'URL' => url($dir), // URL to files (REQUIRED)
-                    'accessControl' => $this->app->config->get($this->package . '::access') // filter callback (OPTIONAL)
-                ];
-            }
-
-            $disks = (array) $this->app['config']->get($this->package . '::disks', []);
-            if ($this->app->bound('flysystem')) {
-                foreach ($disks as $key => $root) {
-                    if (is_string($root)) {
-                        $key = $root;
-                        $root = [];
-                    }
-                    $driver = app('flysystem')->connection($key);
-                    if ($driver instanceof \League\Flysystem\Filesystem) {
-                        $defaults = [
-                            'driver'     => 'Flysystem',
-                            'filesystem' => $driver,
-                            'alias'      => $key,
-                        ];
-                        $roots[] = array_merge($defaults, $root);
-                    }
-                }
-            }
+                    'path' => public_path() . DIRECTORY_SEPARATOR . $dir, // path to files (REQUIRED)
+                    'URL' => asset($dir), // URL to files (REQUIRED)
+                    'accessControl' => Config::get($this->package . '::access') // filter callback (OPTIONAL)
+                )
+            );
         }
 
-        $opts = $this->app->config->get($this->package . '::options', array());
-        $opts = array_merge(array('roots' => $roots), $opts);
+        // Documentation for connector options:
+        // https://github.com/Studio-42/elFinder/wiki/Connector-configuration-options
+        $opts = array(
+            'roots' => $roots
+        );
 
         // run elFinder
-        $connector = new Connector(new \elFinder($opts));
+        $connector = new \elFinderConnector(new \elFinder($opts));
         $connector->run();
         return $connector->getResponse();
     }
